@@ -300,6 +300,7 @@ app.get("/api/devices_laststatus", async (req, res) => {
         diskUseSpace: entity[1].diskUseSpace,
         diskUsing: entity[1].diskUsing,
         payloadUrl: entity[1].payloadUrl,
+        networkProtection: entity[1].networkProtection,
       });
     }
 

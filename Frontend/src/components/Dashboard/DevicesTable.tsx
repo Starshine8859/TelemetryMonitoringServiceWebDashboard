@@ -13,6 +13,7 @@ import { DeviceSummary } from "@/lib/mock-data";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { Eye } from "lucide-react";
 
+
 type DevicesTableProps = {
   devices: DeviceSummary[];
   limit?: number;

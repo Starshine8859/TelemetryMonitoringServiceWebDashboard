@@ -11,7 +11,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Index from "./pages/Index";
 import DevicesPage from "./pages/DevicesPage";
 import DeviceDetailsPage from "./pages/DeviceDetailsPage";
-import TrendsPage from "./pages/TrendsPage";
+import NetworkProtectionPage from "./pages/NetworkPotectionPage";
 import CrashAnalysisPage from "./pages/CrashAnalysisPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -33,7 +33,7 @@ const App = () => (
                   <Route path="devices" element={<DevicesPage />} />
                   <Route path="devices/:deviceId" element={<DeviceDetailsPage />} />
                   {/* <Route path="security" element={<TrendsPage />} /> */}
-                  <Route path="security/networkProtection" element={<TrendsPage />} />
+                  <Route path="security/networkProtection" element={<NetworkProtectionPage />} />
                   <Route path="crashes" element={<CrashAnalysisPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>
