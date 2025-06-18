@@ -58,7 +58,7 @@ const Index = () => {
           computerName: "",
           loggedUser: "",
           dateFrom: thirtyDaysAgo.toISOString() || "",
-          dateTo: now.toISOString() || "",
+          dateTo: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() || "",
         }).toString();
         
         const response = await fetch(
