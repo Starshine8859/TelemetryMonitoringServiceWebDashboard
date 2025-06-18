@@ -1,0 +1,22 @@
+/* ChartStyles.css */
+.recharts-cell:focus,
+.recharts-cell:active,
+.recharts-cell:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+/* Sometimes SVG elements get a focus ring — remove it */
+.recharts-cell {
+  outline: none;
+}
+
+.recharts-cell:focus-visible {
+  outline: 2px solid #3b82f6; /* blue ring */
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+
+svg:focus {
+  outline: none !important;
+}
+

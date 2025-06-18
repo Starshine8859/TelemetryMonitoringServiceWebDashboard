@@ -234,7 +234,7 @@ const DeviceDetailsPage = () => {
             className={theme.transition}
           />
           <div className={`text-sm ${theme.textMuted} text-center mt-2`}>
-            {device.diskUseSpace} / {device.disk}
+            Used : {device.disk} / {device.diskUseSpace} %
           </div>
         </DashboardCard>
       </div>

@@ -102,17 +102,29 @@ const DevicesPage = () => {
     });
   }, [deviceList, deviceId, computerName, loggedUser]);
 
+const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0"); // Months are 0-based
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-2">
           <HardDrive className="h-6 w-6" />
-          <h1 className="text-2xl font-semibold">Devices : {filteredDevices.length}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+          Devices  <small>({formatDate(dateRange.from)} – {formatDate(dateRange.to)})</small> : <strong style={{fontSize:'36px'}}>{filteredDevices.length}</strong>
+        </h1>
         </div>
       </div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" >
+        
         <div className="relative w-full sm:w-64 md:w-80">
+          <DateRangePicker date={dateRange} setDate={setDateRange} />
+        </div>
+        <div className="relative w-full sm:w-64 md:w-80" style={{display:'none'}}>
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
           <Input
             placeholder="Deviced ID"
@@ -138,9 +150,6 @@ const DevicesPage = () => {
             onChange={(e) => setLoggedUser(e.target.value)}
             className="pl-9"
           />
-        </div>
-        <div className="relative w-full sm:w-64 md:w-80">
-          <DateRangePicker date={dateRange} setDate={setDateRange} />
         </div>
       </div>
 

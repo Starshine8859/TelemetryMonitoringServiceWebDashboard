@@ -23,7 +23,7 @@ const NetworkProtectionPage = () => {
         deviceId: "",
         computerName: "",
         loggedUser: "",
-        dateFrom: thirtyDaysAgo.toISOString() || "",
+        dateFrom: "",
         dateTo: "",
         networkProtection: "",
       }).toString();

@@ -26,7 +26,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
-import config from '../lib/config';
+import config from "../lib/config";
 
 const apiUrl = config.apiUrl;
 
@@ -47,6 +47,17 @@ const Index = () => {
   const [osDistribution, setOsDistribution] = useState([]);
   const [lastUpdatedDevice, setLastUpdatedDevice] = useState(null);
   const [trendData, setTrendData] = useState<TrendData[]>([]);
+
+  const currentDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(currentDate.getDate() - 30);
+
+  const formatDate = (date) => {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, "0"); // Months are 0-based
+    const day = `${date.getDate()}`.padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     const getDeviceData = async () => {
@@ -109,7 +120,10 @@ const Index = () => {
 
     const latestDevices = devices
       .slice()
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      )
       .slice(0, 10);
 
     const trends = latestDevices.reverse().map((device) => ({
@@ -154,7 +168,7 @@ const Index = () => {
     >
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-          Dashboard
+          Dashboard <small>({formatDate(startDate)} – {formatDate(currentDate)})</small>
         </h1>
         <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
           <Button
@@ -207,7 +221,10 @@ const Index = () => {
           },
           {
             title: "Total Errors",
-            value: devices.reduce((sum, item) => sum + (item.crashesCnt || 0), 0),
+            value: devices.reduce(
+              (sum, item) => sum + (item.crashesCnt || 0),
+              0
+            ),
             icon: <AlertTriangle className="h-6 w-6" />,
             color: "red",
           },
@@ -233,98 +250,101 @@ const Index = () => {
       </motion.div>
 
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, delay: 0.4 }}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+    >
+      {/* Latest Device Status Card */}
+      <DashboardCard
+        title="Latest Device Status"
+        description={
+          lastUpdatedDevice
+            ? `Computer: ${lastUpdatedDevice.computerName}`
+            : "No devices"
+        }
+        className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
       >
-        <DashboardCard
-          title="Latest Device Status"
-          description={
-            lastUpdatedDevice
-              ? `Computer: ${lastUpdatedDevice.computerName}`
-              : "No devices"
-          }
-          className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
-        >
-          <div className="flex flex-wrap justify-around gap-6 mt-8">
-            {[
-              { value: lastUpdatedDevice?.cpu ?? 0, label: "CPU Usage" },
-              { value: lastUpdatedDevice?.ram ?? 0, label: "RAM Usage" },
-              { value: lastUpdatedDevice?.diskUsing ?? 0, label: "Disk Usage" },
-            ].map((gauge, index) => (
-              <motion.div
-                key={gauge.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, delay: 0.1 * index }}
-              >
-                <GaugeChart
-                  value={gauge.value}
-                  label={gauge.label}
-                  className="hover:scale-105 transition-transform duration-300"
-                />
-              </motion.div>
-            ))}
-          </div>
-        </DashboardCard>
+        <div className="flex flex-wrap justify-around gap-6 mt-8">
+          {[
+            { value: lastUpdatedDevice?.cpu ?? 0, label: "CPU Usage" },
+            { value: lastUpdatedDevice?.ram ?? 0, label: "RAM Usage" },
+            { value: lastUpdatedDevice?.diskUsing ?? 0, label: "Disk Usage" },
+          ].map((gauge, index) => (
+            <motion.div
+              key={gauge.label}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.1 * index }}
+            >
+              <GaugeChart
+                value={gauge.value}
+                label={gauge.label}
+                className="hover:scale-105 transition-transform duration-300"
+              />
+            </motion.div>
+          ))}
+        </div>
+      </DashboardCard>
 
-        <DashboardCard
-          title="OS Distribution"
-          className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+      {/* OS Distribution Card */}
+      <DashboardCard
+        title="OS Distribution"
+        className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+      >
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="h-[300px]"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="h-[300px]"
-          >
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={osDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="count"
-                  nameKey="name"
-                >
-                  {osDistribution.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS[index % COLORS.length]}
-                      className="hover:opacity-80 transition-opacity duration-200 cursor-pointer"
-                    />
-                  ))}
-                </Pie>
-                <Legend
-                  verticalAlign="bottom"
-                  height={36}
-                  formatter={(value) => (
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                      {value}
-                    </span>
-                  )}
-                />
-                <Tooltip
-                  formatter={(value) => [`${value} devices`, "Count"]}
-                  contentStyle={{
-                    backgroundColor: "rgba(255, 255, 255, 0.95)",
-                    border: "none",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    backdropFilter: "blur(8px)",
-                    color: "#1F2937",
-                  }}
-                  labelStyle={{ color: "#374151", fontWeight: "600" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </DashboardCard>
-      </motion.div>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={osDistribution}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={2}
+                dataKey="count"
+                nameKey="name"
+              >
+                {osDistribution.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                    className="hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+                    tabIndex={-1} // <-- Important: disables focus outline on click/focus
+                  />
+                ))}
+              </Pie>
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                formatter={(value) => (
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {value}
+                  </span>
+                )}
+              />
+              <Tooltip
+                formatter={(value) => [`${value} devices`, "Count"]}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "none",
+                  borderRadius: "8px",
+                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                  backdropFilter: "blur(8px)",
+                  color: "#1F2937",
+                }}
+                labelStyle={{ color: "#374151", fontWeight: "600" }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </motion.div>
+      </DashboardCard>
+    </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -356,8 +376,12 @@ const Index = () => {
                     { color: "bg-amber-500", label: "Disk" },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full ${item.color}`}></div>
-                      <span className="text-gray-600 dark:text-gray-300">{item.label}</span>
+                      <div
+                        className={`w-3 h-3 rounded-full ${item.color}`}
+                      ></div>
+                      <span className="text-gray-600 dark:text-gray-300">
+                        {item.label}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -371,7 +395,12 @@ const Index = () => {
                     <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                     <XAxis
                       dataKey="computerName"
-                      tick={{ fontSize: 12, angle: -45, textAnchor: "end", fill: "#6B7280" }} // Rotated ticks for full names
+                      tick={{
+                        fontSize: 12,
+                        angle: -45,
+                        textAnchor: "end",
+                        fill: "#6B7280",
+                      }} // Rotated ticks for full names
                       height={60} // Increased height for rotated labels
                     />
                     <YAxis
@@ -380,7 +409,11 @@ const Index = () => {
                         value: "Usage (%)",
                         angle: -90,
                         position: "insideLeft",
-                        style: { textAnchor: "middle", fill: "#6B7280", fontSize: "12px" },
+                        style: {
+                          textAnchor: "middle",
+                          fill: "#6B7280",
+                          fontSize: "12px",
+                        },
                       }}
                     />
                     <Tooltip
@@ -420,17 +453,59 @@ const Index = () => {
                       className="hover:opacity-80 transition-all duration-300"
                     />
                     <defs>
-                      <linearGradient id="cpuGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#1E40AF" stopOpacity={0.7} />
+                      <linearGradient
+                        id="cpuGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#3B82F6"
+                          stopOpacity={0.9}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#1E40AF"
+                          stopOpacity={0.7}
+                        />
                       </linearGradient>
-                      <linearGradient id="ramGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#10B981" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#047857" stopOpacity={0.7} />
+                      <linearGradient
+                        id="ramGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#10B981"
+                          stopOpacity={0.9}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#047857"
+                          stopOpacity={0.7}
+                        />
                       </linearGradient>
-                      <linearGradient id="diskGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.9} />
-                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.7} />
+                      <linearGradient
+                        id="diskGradient"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="0%"
+                          stopColor="#F59E0B"
+                          stopOpacity={0.9}
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="#D97706"
+                          stopOpacity={0.7}
+                        />
                       </linearGradient>
                     </defs>
                   </BarChart>
@@ -450,7 +525,10 @@ const Index = () => {
                   <AlertTriangle className="h-5 w-5 text-amber-600" />
                   Network Protection Status
                 </h3>
-                <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  transition={{ duration: 0.2 }}
+                >
                   <Button
                     size="sm"
                     variant="outline"
@@ -467,19 +545,22 @@ const Index = () => {
                 {[
                   {
                     status: "Disabled",
-                    count: devices.filter((d) => d.networkProtection === 0).length,
+                    count: devices.filter((d) => d.networkProtection === 0)
+                      .length,
                     color: "red",
                     icon: <AlertTriangle className="h-6 w-6 text-red-600" />,
                   },
                   {
                     status: "Block Mode",
-                    count: devices.filter((d) => d.networkProtection === 1).length,
+                    count: devices.filter((d) => d.networkProtection === 1)
+                      .length,
                     color: "green",
                     icon: <Database className="h-6 w-6 text-green-600" />,
                   },
                   {
                     status: "Audit Mode",
-                    count: devices.filter((d) => d.networkProtection === 2).length,
+                    count: devices.filter((d) => d.networkProtection === 2)
+                      .length,
                     color: "blue",
                     icon: <HardDrive className="h-6 w-6 text-blue-600" />,
                   },
@@ -550,9 +631,12 @@ const Index = () => {
                   <span className="text-gray-800 dark:text-gray-200 font-semibold">
                     {devices.length > 0
                       ? (
-                          ((devices.filter((d) => d.networkProtection === 1).length +
-                            devices.filter((d) => d.networkProtection === 2).length) /
-                          devices.length) * 100
+                          ((devices.filter((d) => d.networkProtection === 1)
+                            .length +
+                            devices.filter((d) => d.networkProtection === 2)
+                              .length) /
+                            devices.length) *
+                          100
                         ).toFixed(1)
                       : 0}
                     %
@@ -563,9 +647,16 @@ const Index = () => {
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{
-                        width: devices.length > 0
-                          ? `${(devices.filter((d) => d.networkProtection === 1).length / devices.length) * 100}%`
-                          : "0%",
+                        width:
+                          devices.length > 0
+                            ? `${
+                                (devices.filter(
+                                  (d) => d.networkProtection === 1
+                                ).length /
+                                  devices.length) *
+                                100
+                              }%`
+                            : "0%",
                       }}
                       transition={{ duration: 1, ease: "easeOut" }}
                       className="bg-green-500"
@@ -573,9 +664,16 @@ const Index = () => {
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{
-                        width: devices.length > 0
-                          ? `${(devices.filter((d) => d.networkProtection === 2).length / devices.length) * 100}%`
-                          : "0%",
+                        width:
+                          devices.length > 0
+                            ? `${
+                                (devices.filter(
+                                  (d) => d.networkProtection === 2
+                                ).length /
+                                  devices.length) *
+                                100
+                              }%`
+                            : "0%",
                       }}
                       transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
                       className="bg-blue-500"
@@ -585,12 +683,18 @@ const Index = () => {
                 <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
                   <span>
                     Protected:{" "}
-                    {devices.filter((d) => d.networkProtection === 1 || d.networkProtection === 2)
-                      .length}{" "}
+                    {
+                      devices.filter(
+                        (d) =>
+                          d.networkProtection === 1 || d.networkProtection === 2
+                      ).length
+                    }{" "}
                     devices
                   </span>
                   <span>
-                    Unprotected: {devices.filter((d) => d.networkProtection === 0).length} devices
+                    Unprotected:{" "}
+                    {devices.filter((d) => d.networkProtection === 0).length}{" "}
+                    devices
                   </span>
                 </div>
               </motion.div>
@@ -622,7 +726,12 @@ const Index = () => {
                 <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
                 <XAxis
                   dataKey="computerName"
-                  tick={{ fontSize: 12, angle: -45, textAnchor: "end", fill: "#6B7280" }} // Rotated ticks for full names
+                  tick={{
+                    fontSize: 12,
+                    angle: -45,
+                    textAnchor: "end",
+                    fill: "#6B7280",
+                  }} // Rotated ticks for full names
                   height={60} // Increased height for rotated labels
                 />
                 <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
