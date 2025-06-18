@@ -99,11 +99,6 @@ const NetworkProtectionPage = () => {
             <h2 className="text-lg font-medium">{statusesName[status]}</h2>
             <p className="text-sm text-muted-foreground">
               {deviceList.filter((d) => {
-                if (status === "0") {
-                  return (
-                    d.networkProtection === 0 || d.networkProtection == null
-                  ); // null or undefined
-                }
                 return d.networkProtection === status;
               }).length}{" "}
               device(s)
@@ -144,12 +139,6 @@ const NetworkProtectionPage = () => {
                 <tbody>
                   {deviceList
                     .filter((d) => {
-                      if (selectedStatus === "0") {
-                        return (
-                          d.networkProtection === 0 ||
-                          d.networkProtection == null
-                        ); // null or undefined
-                      }
                       return d.networkProtection === selectedStatus;
                     })
                     .map((device) => (
