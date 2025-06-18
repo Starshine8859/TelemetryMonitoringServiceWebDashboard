@@ -12,7 +12,7 @@ const statuses = [0, 1, 2];
 const NetworkProtectionPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<number>(1); // Initialize with 1 directly
+  const [selectedStatus, setSelectedStatus] = useState<number>(0); // Initialize with 1 directly
   const [deviceList, setDeviceList] = useState([]);
 
   async function getDeviceList() {
