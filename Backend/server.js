@@ -291,7 +291,7 @@ app.get("/api/devices_laststatus", async (req, res) => {
         cpuCores: entity[1].cpuCores,
         crashesCnt: entity[1].crashesCnt,
         date: entity[1].date,
-        disk: entity[1].disk.toString(),
+        disk: entity[1]?.disk?.toString() || '',
         loggedOnUser: entity[1].loggedOnUser,
         osVersion: entity[1].osVersion,
         osVersionFull: entity[1].osVersionFull,
@@ -301,6 +301,7 @@ app.get("/api/devices_laststatus", async (req, res) => {
         diskUsing: entity[1].diskUsing,
         payloadUrl: entity[1].payloadUrl,
         networkProtection: entity[1].networkProtection?entity[1].networkProtection:0,
+        ASRRules:  entity[1].ASRRules || '{}',
       });
     }
 

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   HardDrive,
   Search,
@@ -22,9 +23,8 @@ import {
   subDays,
   endOfDay,
 } from "date-fns";
-import config from '../lib/config';
+import config from "../lib/config";
 const apiUrl = config.apiUrl;
-
 
 const DevicesPage = () => {
   const [loading, setLoading] = useState(false);
@@ -95,14 +95,16 @@ const DevicesPage = () => {
       // Filter by search term
       const searchMatch =
         device.rowKey.toLowerCase().includes(deviceId.toLowerCase()) &&
-        device.computerName.toLowerCase().includes(computerName.toLowerCase()) &&
+        device.computerName
+          .toLowerCase()
+          .includes(computerName.toLowerCase()) &&
         device.loggedOnUser.toLowerCase().includes(loggedUser.toLowerCase());
-            
+
       return searchMatch;
     });
   }, [deviceList, deviceId, computerName, loggedUser]);
 
-const formatDate = (date) => {
+  const formatDate = (date) => {
     const year = date.getFullYear();
     const month = `${date.getMonth() + 1}`.padStart(2, "0"); // Months are 0-based
     const day = `${date.getDate()}`.padStart(2, "0");
@@ -110,80 +112,92 @@ const formatDate = (date) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <HardDrive className="h-6 w-6" />
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
-          Devices  <small>({formatDate(dateRange.from)} – {formatDate(dateRange.to)})</small> : <strong style={{fontSize:'36px'}}>{filteredDevices.length}</strong>
-        </h1>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="space-y-6 p-6 select-none"
+    >
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <HardDrive className="h-6 w-6" />
+            <h1 className="text-3xl text-gray-900 dark:text-white tracking-tight">
+              Devices :{" "}
+              <strong style={{ fontSize: "36px" }}>
+                {filteredDevices.length}
+              </strong>
+            </h1>
+          </div>
         </div>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4" >
-        
-        <div className="relative w-full sm:w-64 md:w-80">
-          <DateRangePicker date={dateRange} setDate={setDateRange} />
-        </div>
-        <div className="relative w-full sm:w-64 md:w-80" style={{display:'none'}}>
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-          <Input
-            placeholder="Deviced ID"
-            value={deviceId}
-            onChange={(e) => setDeviceId(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="relative w-full sm:w-64 md:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-          <Input
-            placeholder="Computer Name"
-            value={computerName}
-            onChange={(e) => setComputerName(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="relative w-full sm:w-64 md:w-80">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-          <Input
-            placeholder="Logged On User"
-            value={loggedUser}
-            onChange={(e) => setLoggedUser(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="w-full flex justify-center py-10">
-          <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
-        </div>
-      ) : (
-        <DevicesTable devices={filteredDevices} />
-      )}
-
-      { filteredDevices.length === 0 && (
-        <div className="text-center py-10">
-          <p className="text-gray-500 dark:text-gray-400">
-            No devices found matching
-          </p>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setDeviceId("");
-              setComputerName("");
-              setLoggedUser("");
-              setDateRange({
-                from: subDays(new Date(), 6), // 7-day range including today
-                to: endOfDay(new Date()),
-              });
-            }}
-            className="mt-2"
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-left gap-4">
+          <div className="relative w-full sm:w-64 md:w-80">
+            <DateRangePicker date={dateRange} setDate={setDateRange} />
+          </div>
+          <div
+            className="relative w-full sm:w-64 md:w-80"
+            style={{ display: "none" }}
           >
-            Clear search
-          </Button>
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <Input
+              placeholder="Deviced ID"
+              value={deviceId}
+              onChange={(e) => setDeviceId(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="relative w-full sm:w-64 md:w-80">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <Input
+              placeholder="Computer Name"
+              value={computerName}
+              onChange={(e) => setComputerName(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="relative w-full sm:w-64 md:w-80">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
+            <Input
+              placeholder="Logged On User"
+              value={loggedUser}
+              onChange={(e) => setLoggedUser(e.target.value)}
+              className="pl-9"
+            />
+          </div>
         </div>
-      )}
-    </div>
+
+        {loading ? (
+          <div className="w-full flex justify-center py-10">
+            <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
+          </div>
+        ) : (
+          <DevicesTable devices={filteredDevices} />
+        )}
+
+        {filteredDevices.length === 0 && (
+          <div className="text-center py-10">
+            <p className="text-gray-500 dark:text-gray-400">
+              No devices found matching
+            </p>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDeviceId("");
+                setComputerName("");
+                setLoggedUser("");
+                setDateRange({
+                  from: subDays(new Date(), 6), // 7-day range including today
+                  to: endOfDay(new Date()),
+                });
+              }}
+              className="mt-2"
+            >
+              Clear search
+            </Button>
+          </div>
+        )}
+      </div>
+    </motion.div>
   );
 };
 

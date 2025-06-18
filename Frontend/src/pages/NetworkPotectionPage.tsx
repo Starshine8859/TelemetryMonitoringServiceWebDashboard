@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +13,11 @@ const statuses = [0, 1, 2];
 const NetworkProtectionPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<number>(0); // Initialize with 1 directly
-  const [deviceList, setDeviceList] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState<number>(0);
+  const [deviceList, setDeviceList] = useState<any[]>([]);
 
   async function getDeviceList() {
     try {
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       const params = new URLSearchParams({
         deviceId: "",
         computerName: "",
@@ -28,20 +27,19 @@ const NetworkProtectionPage = () => {
         networkProtection: "",
       }).toString();
 
-      const response = await fetch(
-        `http://${apiUrl}/api/devices_laststatus?${params}`,
-        {
-          method: "GET",
-        }
-      );
+      const response = await fetch(`http://${apiUrl}/api/devices_laststatus?${params}`, {
+        method: "GET",
+      });
+
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
       }
+
       const data = await response.json();
-      return data.devices; // Expected to return device data array
+      return data.devices; // Expected to return device array
     } catch (error) {
-      console.error('Error fetching devices:', error);
-      return []; // Return empty array on failure
+      console.error("Error fetching devices:", error);
+      return [];
     }
   }
 
@@ -53,33 +51,32 @@ const NetworkProtectionPage = () => {
     const fetchDevices = async () => {
       setLoading(true);
       let data = await getDeviceList();
-      
-      data = [...data].sort((a, b) => {
-        return (
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-      });
-      setDeviceList(data); // Update state with fetched data
+
+      data = [...data].sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+
+      setDeviceList(data);
       setLoading(false);
     };
 
     fetchDevices();
   }, [selectedStatus]);
 
-  // Helper function to filter devices with type safety
-  const getFilteredDevices = () => {
-    return deviceList.filter((d) => {
-      // Convert both to numbers for comparison to handle type mismatches
-      return Number(d.networkProtection) === Number(selectedStatus);
-    });
-  };
-
-  const filteredDevices = getFilteredDevices();
+  const filteredDevices = deviceList.filter(
+    (d) => Number(d.networkProtection) === Number(selectedStatus)
+  );
 
   return (
-    <div className="p-6 space-y-6 bg-background text-foreground">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="space-y-6 p-6 select-none"
+    >
       <h1 className="text-2xl font-semibold">
-        Network Protection – Exploit Guard <strong style={{fontSize:'32px'}}>{deviceList.length}</strong>device(s)
+        Network Protection :{" "}
+        <strong style={{ fontSize: "32px" }}>{deviceList.length}</strong>
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -96,9 +93,9 @@ const NetworkProtectionPage = () => {
             <h2 className="text-lg font-medium">{statusesName[status]}</h2>
             <p className="text-sm text-muted-foreground">
               {
-                deviceList.filter((d) => {
-                  return Number(d.networkProtection) === Number(status);
-                }).length
+                deviceList.filter(
+                  (d) => Number(d.networkProtection) === Number(status)
+                ).length
               }{" "}
               device(s)
             </p>
@@ -120,18 +117,14 @@ const NetworkProtectionPage = () => {
               No devices found with {statusesName[selectedStatus]} status.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full border border-border text-sm">
-                <thead className="bg-muted text-muted-foreground">
+            <div className="overflow-x-auto max-h-[600px] overflow-y-auto border border-border rounded">
+              <table className="min-w-full border-collapse border border-border text-sm">
+                <thead className="bg-muted text-muted-foreground sticky top-0">
                   <tr>
-                    <th className="px-4 py-2 border border-border">
-                      Computer Name
-                    </th>
+                    <th className="px-4 py-2 border border-border">Computer Name</th>
                     <th className="px-4 py-2 border border-border">OS</th>
                     <th className="px-4 py-2 border border-border">User</th>
-                    <th className="px-4 py-2 border border-border">
-                      Last Seen
-                    </th>
+                    <th className="px-4 py-2 border border-border">Last Seen</th>
                     <th className="px-4 py-2 border border-border">CPU</th>
                     <th className="px-4 py-2 border border-border">RAM</th>
                     <th className="px-4 py-2 border border-border">Disk</th>
@@ -145,20 +138,12 @@ const NetworkProtectionPage = () => {
                       key={device.deviceId}
                       className="border-t border-border hover:bg-muted/50"
                     >
-                      <td className="px-4 py-2 border border-border">
-                        {device.computerName}
-                      </td>
-                      <td className="px-4 py-2 border border-border">
-                        {device.osVersion}
-                      </td>
-                      <td className="px-4 py-2 border border-border">
-                        {device.loggedOnUser}
-                      </td>
+                      <td className="px-4 py-2 border border-border">{device.computerName}</td>
+                      <td className="px-4 py-2 border border-border">{device.osVersion}</td>
+                      <td className="px-4 py-2 border border-border">{device.loggedOnUser}</td>
                       <td className="px-4 py-2 border border-border">
                         <div className="text-sm">
-                          <div>
-                            {format(parseISO(device.timestamp), "yyyy-MM-dd")}
-                          </div>
+                          <div>{format(parseISO(device.timestamp), "yyyy-MM-dd")}</div>
                           <div className="text-muted-foreground">
                             {formatDistanceToNow(parseISO(device.timestamp), {
                               addSuffix: true,
@@ -166,20 +151,12 @@ const NetworkProtectionPage = () => {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-2 border border-border">
-                        {device.cpu}%
-                      </td>
-                      <td className="px-4 py-2 border border-border">
-                        {device.ram}%
-                      </td>
-                      <td className="px-4 py-2 border border-border">
-                        {device.disk}GB
-                      </td>
+                      <td className="px-4 py-2 border border-border">{device.cpu}%</td>
+                      <td className="px-4 py-2 border border-border">{device.ram}%</td>
+                      <td className="px-4 py-2 border border-border">{device.disk}GB</td>
                       <td className="px-4 py-2 border border-border">
                         {device.crashesCnt > 0 ? (
-                          <span className="text-red-500 font-medium">
-                            {device.crashesCnt}
-                          </span>
+                          <span className="text-red-500 font-medium">{device.crashesCnt}</span>
                         ) : (
                           device.crashesCnt
                         )}
@@ -201,7 +178,7 @@ const NetworkProtectionPage = () => {
           )}
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

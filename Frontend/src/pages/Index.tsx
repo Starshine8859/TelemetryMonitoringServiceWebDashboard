@@ -167,14 +167,14 @@ const Index = () => {
       className="space-y-6 p-6 select-none"
     >
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+        <h1 className="text-3xl text-gray-900 dark:text-white tracking-tight">
           Dashboard <small>({formatDate(startDate)} – {formatDate(currentDate)})</small>
         </h1>
         <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
           <Button
             size="sm"
             onClick={() => navigate("/devices")}
-            className="shadow-sm hover:shadow-md transition-shadow duration-200 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            className="shadow-sm hover:shadow-md transition-shadow duration-200 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600"
           >
             <Database className="mr-2 h-4 w-4" />
             View All Devices
