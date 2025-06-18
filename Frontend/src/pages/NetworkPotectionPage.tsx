@@ -77,7 +77,7 @@ const NetworkProtectionPage = () => {
   return (
     <div className="p-6 space-y-6 bg-background text-foreground">
       <h1 className="text-2xl font-semibold">
-        Network Protection – Exploit Guard
+        Network Protection – Exploit Guard <strong style={{fontSize:'32px'}}>{deviceList.length}</strong>device(s)
       </h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
