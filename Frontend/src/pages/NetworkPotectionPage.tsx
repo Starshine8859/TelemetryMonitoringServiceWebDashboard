@@ -6,25 +6,13 @@ import { useNavigate } from "react-router-dom";
 import config from "../lib/config";
 const apiUrl = config.apiUrl;
 
-const mockDeviceData = {
-  "0": [
-    { id: "device-101", name: "Laptop-A", ip: "192.168.1.10" },
-    { id: "device-102", name: "PC-B", ip: "192.168.1.22" },
-  ],
-  "1": [{ id: "device-201", name: "Server-X", ip: "192.168.2.1" }],
-  "2": [
-    { id: "device-301", name: "Workstation-Y", ip: "192.168.3.15" },
-    { id: "device-302", name: "Surface-Z", ip: "192.168.3.99" },
-  ],
-};
-
 const statusesName = ["Disabled", "Enabled (Block Mode)", "Audit Mode"];
-const statuses = ["0", "1", "2"];
+const statuses = [0, 1, 2];
 
 const NetworkProtectionPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<number>(1); // Initialize with 1 directly
   const [deviceList, setDeviceList] = useState([]);
 
   async function getDeviceList() {
@@ -35,7 +23,7 @@ const NetworkProtectionPage = () => {
         loggedUser: "",
         dateFrom: "",
         dateTo: "",
-        networkProtection: selectedStatus,
+        networkProtection: "",
       }).toString();
 
       const response = await fetch(
@@ -50,6 +38,7 @@ const NetworkProtectionPage = () => {
       const data = await response.json();
       return data.devices; // Expected to return device data array
     } catch (error) {
+      console.error('Error fetching devices:', error);
       return []; // Return empty array on failure
     }
   }
@@ -62,25 +51,28 @@ const NetworkProtectionPage = () => {
     const fetchDevices = async () => {
       setLoading(true);
       let data = await getDeviceList();
-      console.log(data);
+      
       data = [...data].sort((a, b) => {
         return (
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
       });
       setDeviceList(data); // Update state with fetched data
-      console.log(deviceList.filter((d) => {
-                return d.networkProtection == 0;
-              }));
       setLoading(false);
     };
 
     fetchDevices();
   }, [selectedStatus]);
 
-  useEffect(() => {
-    setSelectedStatus("0");
-  }, []);
+  // Helper function to filter devices with type safety
+  const getFilteredDevices = () => {
+    return deviceList.filter((d) => {
+      // Convert both to numbers for comparison to handle type mismatches
+      return Number(d.networkProtection) === Number(selectedStatus);
+    });
+  };
+
+  const filteredDevices = getFilteredDevices();
 
   return (
     <div className="p-6 space-y-6 bg-background text-foreground">
@@ -101,9 +93,11 @@ const NetworkProtectionPage = () => {
           >
             <h2 className="text-lg font-medium">{statusesName[status]}</h2>
             <p className="text-sm text-muted-foreground">
-              {deviceList.filter((d) => {
-                return d.networkProtection === status;
-              }).length}{" "}
+              {
+                deviceList.filter((d) => {
+                  return Number(d.networkProtection) === Number(status);
+                }).length
+              }{" "}
               device(s)
             </p>
           </div>
@@ -115,11 +109,15 @@ const NetworkProtectionPage = () => {
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
         </div>
       ) : (
-        selectedStatus && (
-          <div className="mt-6">
-            <h2 className="text-xl font-medium mb-2 text-foreground">
-              {statusesName[selectedStatus]} – Devices
-            </h2>
+        <div className="mt-6">
+          <h2 className="text-xl font-medium mb-2 text-foreground">
+            {statusesName[selectedStatus]} – Devices ({filteredDevices.length})
+          </h2>
+          {filteredDevices.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No devices found with {statusesName[selectedStatus]} status.
+            </div>
+          ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full border border-border text-sm">
                 <thead className="bg-muted text-muted-foreground">
@@ -140,70 +138,66 @@ const NetworkProtectionPage = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {deviceList
-                    .filter((d) => {
-                      return d.networkProtection === selectedStatus;
-                    })
-                    .map((device) => (
-                      <tr
-                        key={device.deviceId}
-                        className="border-t border-border hover:bg-muted/50"
-                      >
-                        <td className="px-4 py-2 border border-border">
-                          {device.computerName}
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.osVersion}
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.loggedOnUser}
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          <div className="text-sm">
-                            <div>
-                              {format(parseISO(device.timestamp), "yyyy-MM-dd")}
-                            </div>
-                            <div className="text-muted-foreground">
-                              {formatDistanceToNow(parseISO(device.timestamp), {
-                                addSuffix: true,
-                              })}
-                            </div>
+                  {filteredDevices.map((device) => (
+                    <tr
+                      key={device.deviceId}
+                      className="border-t border-border hover:bg-muted/50"
+                    >
+                      <td className="px-4 py-2 border border-border">
+                        {device.computerName}
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.osVersion}
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.loggedOnUser}
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        <div className="text-sm">
+                          <div>
+                            {format(parseISO(device.timestamp), "yyyy-MM-dd")}
                           </div>
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.cpu}%
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.ram}%
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.disk}GB
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          {device.crashesCnt > 0 ? (
-                            <span className="text-red-500 font-medium">
-                              {device.crashesCnt}
-                            </span>
-                          ) : (
-                            device.crashesCnt
-                          )}
-                        </td>
-                        <td className="px-4 py-2 border border-border">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleViewDetails(device.deviceId)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                          <div className="text-muted-foreground">
+                            {formatDistanceToNow(parseISO(device.timestamp), {
+                              addSuffix: true,
+                            })}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.cpu}%
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.ram}%
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.disk}GB
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        {device.crashesCnt > 0 ? (
+                          <span className="text-red-500 font-medium">
+                            {device.crashesCnt}
+                          </span>
+                        ) : (
+                          device.crashesCnt
+                        )}
+                      </td>
+                      <td className="px-4 py-2 border border-border">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetails(device.deviceId)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </div>
-        )
+          )}
+        </div>
       )}
     </div>
   );
