@@ -69,6 +69,9 @@ const NetworkProtectionPage = () => {
         );
       });
       setDeviceList(data); // Update state with fetched data
+      console.log(deviceList.filter((d) => {
+                return d.networkProtection == 0;
+              }));
       setLoading(false);
     };
 
