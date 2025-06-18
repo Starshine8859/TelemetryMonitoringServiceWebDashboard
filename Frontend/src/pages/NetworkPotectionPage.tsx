@@ -17,11 +17,13 @@ const NetworkProtectionPage = () => {
 
   async function getDeviceList() {
     try {
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
       const params = new URLSearchParams({
         deviceId: "",
         computerName: "",
         loggedUser: "",
-        dateFrom: "",
+        dateFrom: thirtyDaysAgo.toISOString() || "",
         dateTo: "",
         networkProtection: "",
       }).toString();
