@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { Eye } from "lucide-react";
+import { Eye, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import config from "../lib/config";
@@ -15,6 +15,7 @@ const NetworkProtectionPage = () => {
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(false);
+  const [reloadData, setReloadData] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<number>(0);
   const [devices, setDevices] = useState<any[]>([]);
 
@@ -43,7 +44,8 @@ const NetworkProtectionPage = () => {
         const { devices: rawDevices = [] } = await response.json();
 
         const sortedDevices = [...rawDevices].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
         );
 
         setDevices(sortedDevices);
@@ -56,6 +58,45 @@ const NetworkProtectionPage = () => {
 
     fetchDevices();
   }, []);
+
+  useEffect(() => {
+    const fetchDevices = async () => {
+      setLoading(true);
+      try {
+        const query = new URLSearchParams({
+          deviceId: "",
+          computerName: "",
+          loggedUser: "",
+          dateFrom: "",
+          dateTo: "",
+          networkProtection: "",
+        }).toString();
+
+        const response = await fetch(
+          `http://${apiUrl}/api/devices_laststatus?${query}`
+        );
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        const { devices: rawDevices = [] } = await response.json();
+
+        const sortedDevices = [...rawDevices].sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        setDevices(sortedDevices);
+      } catch (err) {
+        console.error("Device fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDevices();
+  }, [reloadData]);
 
   const filteredDevices = devices.filter(
     (device) => Number(device.networkProtection) === selectedStatus
@@ -72,11 +113,31 @@ const NetworkProtectionPage = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="space-y-6 p-6 select-none"
     >
-      <h1 className="text-2xl font-semibold">
-        Network Protection:{" "}
-        <strong className="text-3xl">{devices.length}</strong>
-      </h1>
-
+      <div className="flex items-between justify-between gap-2 truncate">
+        <div>
+          <h1 className="text-2xl font-semibold">
+            Network Protection:{" "}
+            <strong className="text-3xl">{devices.length}</strong>
+          </h1>
+        </div>
+        <div style={{ paddingRight: "20px" }}>
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Button
+              size="sm"
+              onClick={() => {
+                setReloadData(!reloadData);
+              }}
+              className="px-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-info-500 hover:bg-info-600 dark:bg-info-400 dark:text-white dark:hover:bg-info-500"
+            >
+              <Upload className="mr-2 h-4 w-4 rotate-180" />
+              ReloadData
+            </Button>
+          </motion.div>
+        </div>
+      </div>
       {/* Status Selector Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {statuses.map((status) => {
@@ -175,7 +236,9 @@ const NetworkProtectionPage = () => {
                           <div className="text-sm">
                             <div>{format(lastSeen, "yyyy-MM-dd")}</div>
                             <div className="text-muted-foreground">
-                              {formatDistanceToNow(lastSeen, { addSuffix: true })}
+                              {formatDistanceToNow(lastSeen, {
+                                addSuffix: true,
+                              })}
                             </div>
                           </div>
                         </td>

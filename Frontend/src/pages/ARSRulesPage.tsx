@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { format, formatDistanceToNow, parseISO } from "date-fns";
 import {
   CheckCircle,
   AlertTriangle,
@@ -15,6 +16,8 @@ import {
   HardDrive,
   Eye,
   Upload,
+  Calendar,
+  Clock,
 } from "lucide-react";
 import config from "../lib/config";
 const apiUrl = config.apiUrl;
@@ -141,6 +144,12 @@ const ASRComplianceMatrix = () => {
       label: "Device Name",
       shortLabel: "Device",
       icon: <Cpu className="w-4 h-4" />,
+    },
+    {
+      key: "Time",
+      label: "Time",
+      shortLabel: "Time",
+      icon: <Clock className="w-4 h-4" />,
     },
     {
       key: "NetworkProtection",
@@ -361,6 +370,19 @@ const ASRComplianceMatrix = () => {
                     >
                       {device.computerName}
                     </td>
+                    
+                    <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="text-sm">
+                          <div>{format(device.timestamp, "yyyy-MM-dd")}</div>
+                          <div className="text-muted-foreground">
+                            {formatDistanceToNow(device.timestamp, {
+                              addSuffix: true,
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
                       <div className="flex items-center justify-center gap-2">
                         {getStatusIcon(device.networkProtection)}
@@ -373,7 +395,7 @@ const ASRComplianceMatrix = () => {
                     </td>
 
                     {/* Other columns */}
-                    {columns.slice(2, -1).map((col) => {
+                    {columns.slice(3, -1).map((col) => {
                       const status = rules[col.key] || "unknown";
                       return (
                         <td
