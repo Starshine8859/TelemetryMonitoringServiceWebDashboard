@@ -13,62 +13,57 @@ const statuses = [0, 1, 2];
 
 const NetworkProtectionPage = () => {
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<number>(0);
-  const [deviceList, setDeviceList] = useState<any[]>([]);
+  const [devices, setDevices] = useState<any[]>([]);
 
-  async function getDeviceList() {
-    try {
-      const params = new URLSearchParams({
-        deviceId: "",
-        computerName: "",
-        loggedUser: "",
-        dateFrom: "",
-        dateTo: "",
-        networkProtection: "",
-      }).toString();
+  // Fetch device data on initial load
+  useEffect(() => {
+    const fetchDevices = async () => {
+      setLoading(true);
+      try {
+        const query = new URLSearchParams({
+          deviceId: "",
+          computerName: "",
+          loggedUser: "",
+          dateFrom: "",
+          dateTo: "",
+          networkProtection: "",
+        }).toString();
 
-      const response = await fetch(
-        `http://${apiUrl}/api/devices_laststatus?${params}`,
-        { method: "GET" }
-      );
+        const response = await fetch(
+          `http://${apiUrl}/api/devices_laststatus?${query}`
+        );
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.statusText}`);
+        }
+
+        const { devices: rawDevices = [] } = await response.json();
+
+        const sortedDevices = [...rawDevices].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        setDevices(sortedDevices);
+      } catch (err) {
+        console.error("Device fetch error:", err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      const data = await response.json();
-      return data.devices || [];
-    } catch (error) {
-      console.error("Error fetching devices:", error);
-      return [];
-    }
-  }
+    fetchDevices();
+  }, []);
+
+  const filteredDevices = devices.filter(
+    (device) => Number(device.networkProtection) === selectedStatus
+  );
 
   const handleViewDetails = (deviceId: string) => {
     navigate(`/devices/${deviceId}`);
   };
-
-  useEffect(() => {
-    const fetchDevices = async () => {
-      setLoading(true);
-      let data = await getDeviceList();
-
-      data = [...data].sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-
-      setDeviceList(data);
-      setLoading(false);
-    };
-
-    fetchDevices();
-  }, [selectedStatus]);
-
-  const filteredDevices = deviceList.filter(
-    (d) => Number(d.networkProtection) === Number(selectedStatus)
-  );
 
   return (
     <motion.div
@@ -79,33 +74,36 @@ const NetworkProtectionPage = () => {
     >
       <h1 className="text-2xl font-semibold">
         Network Protection:{" "}
-        <strong className="text-3xl">{deviceList.length}</strong>
+        <strong className="text-3xl">{devices.length}</strong>
       </h1>
 
+      {/* Status Selector Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {statuses.map((status) => (
-          <div
-            key={status}
-            onClick={() => setSelectedStatus(status)}
-            className={`cursor-pointer border border-border rounded-lg p-4 shadow-sm hover:shadow-md transition ${
-              selectedStatus === status
-                ? "bg-accent text-accent-foreground"
-                : "bg-muted text-foreground"
-            }`}
-          >
-            <h2 className="text-lg font-medium">{statusesName[status]}</h2>
-            <p className="text-sm text-muted-foreground">
-              {
-                deviceList.filter(
-                  (d) => Number(d.networkProtection) === Number(status)
-                ).length
-              }{" "}
-              device(s)
-            </p>
-          </div>
-        ))}
+        {statuses.map((status) => {
+          const count = devices.filter(
+            (d) => Number(d.networkProtection) === status
+          ).length;
+
+          return (
+            <div
+              key={`status-${status}`}
+              onClick={() => setSelectedStatus(status)}
+              className={`cursor-pointer border rounded-lg p-4 shadow-sm hover:shadow-md transition ${
+                selectedStatus === status
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-foreground"
+              }`}
+            >
+              <h2 className="text-lg font-medium">{statusesName[status]}</h2>
+              <p className="text-sm text-muted-foreground">
+                {count} device{count !== 1 && "s"}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
+      {/* Devices Table */}
       {loading ? (
         <div className="w-full flex justify-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
@@ -121,117 +119,59 @@ const NetworkProtectionPage = () => {
               No devices found with {statusesName[selectedStatus]} status.
             </div>
           ) : (
-            <div
-              className="relative overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg"
-              style={{ scrollbarWidth: "thin" }}
-            >
+            <div className="relative overflow-auto max-h-[70vh] border rounded-lg">
               <table
                 className="w-max min-w-full text-sm border-collapse"
                 style={{ tableLayout: "fixed" }}
               >
                 <thead className="sticky top-0 z-40 bg-gray-100 dark:bg-gray-800">
                   <tr>
-                    {/* Sticky first column header */}
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle sticky left-0 z-50 bg-gray-100 dark:bg-gray-800"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      Computer Name
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      OS
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      User
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      Last Seen
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      CPU
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      RAM
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      Disk
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      Crashes
-                    </th>
-
-                    <th
-                      className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
-                      style={{ minWidth: 150, height: 50 }}
-                    >
-                      Actions
-                    </th>
+                    {[
+                      "Computer Name",
+                      "OS",
+                      "User",
+                      "Last Seen",
+                      "CPU",
+                      "RAM",
+                      "Disk",
+                      "Crashes",
+                      "Actions",
+                    ].map((label, index) => (
+                      <th
+                        key={label}
+                        className={`px-3 py-3 text-center font-medium uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 ${
+                          index === 0
+                            ? "sticky left-0 z-50 bg-gray-100 dark:bg-gray-800"
+                            : ""
+                        }`}
+                        style={{ minWidth: 150 }}
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-
                 <tbody>
                   {filteredDevices.map((device) => {
                     const lastSeen = parseISO(device.timestamp);
                     return (
                       <tr
-                        key={device.deviceId}
+                        key={`device-${device.deviceId}`}
                         className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors even:bg-white odd:bg-gray-100 dark:even:bg-gray-900 dark:odd:bg-gray-800"
                       >
-                        {/* Sticky first column */}
                         <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 whitespace-nowrap text-center"
-                          style={{ minWidth: 150 }}
+                          className="px-3 py-4 border-b font-medium text-center sticky left-0 z-30 bg-white dark:bg-gray-900 whitespace-nowrap"
                           title={device.computerName}
                         >
                           {device.computerName}
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.osVersion}
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.loggedOnUser}
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           <div className="text-sm">
                             <div>{format(lastSeen, "yyyy-MM-dd")}</div>
                             <div className="text-muted-foreground">
@@ -239,32 +179,16 @@ const NetworkProtectionPage = () => {
                             </div>
                           </div>
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.cpu}%
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.ram}%
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.disk}GB
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           {device.crashesCnt > 0 ? (
                             <span className="text-red-500 font-medium">
                               {device.crashesCnt}
@@ -273,11 +197,7 @@ const NetworkProtectionPage = () => {
                             device.crashesCnt
                           )}
                         </td>
-
-                        <td
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                          style={{ minWidth: 150 }}
-                        >
+                        <td className="px-3 py-4 border-b text-center">
                           <Button
                             variant="ghost"
                             size="icon"

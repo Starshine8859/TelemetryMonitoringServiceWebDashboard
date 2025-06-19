@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   CheckCircle,
   AlertTriangle,
@@ -13,6 +14,7 @@ import {
   Cpu,
   HardDrive,
   Eye,
+  Upload,
 } from "lucide-react";
 import config from "../lib/config";
 const apiUrl = config.apiUrl;
@@ -20,6 +22,7 @@ const apiUrl = config.apiUrl;
 const ASRComplianceMatrix = () => {
   const [deviceList, setDeviceList] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [reloadData, setReloadData] = useState(false);
   const navigate = useNavigate();
 
   async function getDeviceList() {
@@ -62,6 +65,20 @@ const ASRComplianceMatrix = () => {
     fetchDevices();
   }, []);
 
+  useEffect(() => {
+    const fetchDevices = async () => {
+      setLoading(true);
+      let data = await getDeviceList();
+      data = data.sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      setDeviceList(data);
+      setLoading(false);
+    };
+    fetchDevices();
+  }, [reloadData]);
+
   const handleViewDetails = (deviceId: string) => {
     navigate(`/devices/${deviceId}`);
   };
@@ -69,12 +86,16 @@ const ASRComplianceMatrix = () => {
   const getStatusIcon = (status) => {
     switch (status) {
       case "0":
+      case 0:
         return <XCircle className="w-4 h-4 text-gray-400" />;
       case "1":
+      case 1:
         return <CheckCircle className="w-4 h-4 text-green-400" />;
       case "2":
+      case 2:
         return <AlertTriangle className="w-4 h-4 text-yellow-400" />;
       case "6":
+      case 6:
         return <XCircle className="w-4 h-4 text-red-400" />;
       default:
         return <XCircle className="w-4 h-4 text-gray-400" />;
@@ -84,12 +105,16 @@ const ASRComplianceMatrix = () => {
   const getStatusText = (status) => {
     switch (status) {
       case "0":
+      case 0:
         return "N/A";
       case "1":
+      case 1:
         return "Block";
       case "2":
+      case 2:
         return "Audit";
       case "6":
+      case 6:
         return "Off";
       default:
         return "N/A";
@@ -116,6 +141,12 @@ const ASRComplianceMatrix = () => {
       label: "Device Name",
       shortLabel: "Device",
       icon: <Cpu className="w-4 h-4" />,
+    },
+    {
+      key: "NetworkProtection",
+      label: "NetworkProtection",
+      shortLabel: "NetworkProtection",
+      icon: <Lock className="w-4 h-4" />,
     },
     {
       key: "56a863a9-875e-4185-98a7-b882c64b5ce5",
@@ -242,24 +273,49 @@ const ASRComplianceMatrix = () => {
 
   return (
     <div className="bg-white dark:bg-gray-900 text-black dark:text-white p-6 rounded-lg h-full flex flex-col">
-      
-    <div style={{paddingBottom:'20px'}}><h1 className="text-2xl font-semibold">
-        ASR Rules :{" "}
-        <strong style={{ fontSize: "32px" }}>{deviceList.length}</strong>
-      </h1></div>
+      <div style={{ paddingBottom: "20px" }}>
+        <div className="flex items-between justify-between gap-2 truncate">
+          <div>
+            <h1 className="text-2xl font-semibold">
+              ASR Rules :{" "}
+              <strong style={{ fontSize: "32px" }}>{deviceList.length}</strong>
+            </h1>
+          </div>
+          <div style={{ paddingRight: "20px" }}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                size="sm"
+                onClick={() => {
+                  setReloadData(!reloadData);
+                }}
+                className="px-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-info-500 hover:bg-info-600 dark:bg-info-400 dark:text-white dark:hover:bg-info-500"
+              >
+                <Upload className="mr-2 h-4 w-4 rotate-180" />
+                ReloadData
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+      </div>
       {loading ? (
         <div className="w-full flex justify-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
         </div>
       ) : (
-        <div className="relative overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg" >
+        <div className="relative overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg">
           <table className="w-full min-w-max text-sm table-fixed border-collapse">
             <thead className="sticky top-0 z-40 bg-gray-100 dark:bg-gray-800">
               <tr>
                 {columns.map((col, index) => (
                   <th
                     key={col.key}
-                    style={{ width: index === 0 ? '200px' : "auto" , height:'50px'}}
+                    style={{
+                      width: index === 0 ? "200px" : "auto",
+                      height: "50px",
+                    }}
                     className={`px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 min-w-32 align-middle
                     ${
                       index === 0
@@ -305,9 +361,19 @@ const ASRComplianceMatrix = () => {
                     >
                       {device.computerName}
                     </td>
+                    <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        {getStatusIcon(device.networkProtection)}
+                        <span
+                          className={getStatusColor(device.networkProtection)}
+                        >
+                          {getStatusText(device.networkProtection)}
+                        </span>
+                      </div>
+                    </td>
 
                     {/* Other columns */}
-                    {columns.slice(1, -1).map((col) => {
+                    {columns.slice(2, -1).map((col) => {
                       const status = rules[col.key] || "unknown";
                       return (
                         <td
