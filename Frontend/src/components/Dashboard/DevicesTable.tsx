@@ -13,7 +13,6 @@ import { DeviceSummary } from "@/lib/mock-data";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { Eye } from "lucide-react";
 
-
 type DevicesTableProps = {
   devices: DeviceSummary[];
   limit?: number;
@@ -31,61 +30,160 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
   };
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {/* <TableHead>Device ID</TableHead> */}
-            <TableHead>Computer Name</TableHead>
-            <TableHead className="hidden md:table-cell">OS</TableHead>
-            <TableHead>User</TableHead>
-            <TableHead className="hidden md:table-cell">Last Seen</TableHead>
-            <TableHead className="hidden lg:table-cell">CPU</TableHead>
-            <TableHead className="hidden lg:table-cell">RAM</TableHead>
-            <TableHead className="hidden lg:table-cell">Disk</TableHead>
-            <TableHead className="hidden lg:table-cell">Crashes</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div
+      className="relative overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg"
+      style={{ scrollbarWidth: "thin" }}
+    >
+      <table
+        className="w-max min-w-full text-sm border-collapse"
+        style={{ tableLayout: "fixed" }}
+      >
+        <thead className="sticky top-0 z-40 bg-gray-100 dark:bg-gray-800">
+          <tr>
+            {/* Sticky first column header */}
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle sticky left-0 z-50 bg-gray-100 dark:bg-gray-800"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              Computer Name
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              OS
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              User
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              Last Seen
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              CPU
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              RAM
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              Disk
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              Crashes
+            </th>
+
+            <th
+              className="px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 align-middle"
+              style={{ minWidth: 150, height: 50 }}
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+
+        <tbody>
           {displayDevices.length === 0 ? (
-            <TableRow>
-              <TableCell
+            <tr>
+              <td
                 colSpan={10}
                 className="text-center py-10 text-muted-foreground"
               >
                 No devices found
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ) : (
-            displayDevices.map((device, index) => {
+            displayDevices.map((device) => {
               const lastSeen = parseISO(device.timestamp);
               return (
-                <TableRow key={device.deviceId}>
-                  {/* <TableCell>{device.deviceId}</TableCell> */}
-                  <TableCell className="font-medium">
+                <tr
+                  key={device.deviceId}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors even:bg-white odd:bg-gray-100 dark:even:bg-gray-900 dark:odd:bg-gray-800"
+                >
+                  {/* Sticky first column */}
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 whitespace-nowrap text-center"
+                    style={{ minWidth: 150 }}
+                    title={device.computerName}
+                  >
                     {device.computerName}
-                  </TableCell>
-                  <TableCell>{device.osVersion}</TableCell>
-                  <TableCell>{device.loggedOnUser}</TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
+                    {device.osVersion}
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
+                    {device.loggedOnUser}
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     <div className="text-sm">
                       <div>{format(lastSeen, "yyyy-MM-dd")}</div>
                       <div className="text-muted-foreground">
                         {formatDistanceToNow(lastSeen, { addSuffix: true })}
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     {device.cpu}%
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     {device.ram}%
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     {device.disk}GB
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     {device.crashesCnt > 0 ? (
                       <span className="text-red-500 font-medium">
                         {device.crashesCnt}
@@ -93,8 +191,12 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
                     ) : (
                       device.crashesCnt
                     )}
-                  </TableCell>
-                  <TableCell className="text-right">
+                  </td>
+
+                  <td
+                    className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                    style={{ minWidth: 150 }}
+                  >
                     <Button
                       variant="ghost"
                       size="icon"
@@ -102,13 +204,13 @@ const DevicesTable = ({ devices, limit }: DevicesTableProps) => {
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               );
             })
           )}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };

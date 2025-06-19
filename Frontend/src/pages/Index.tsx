@@ -27,6 +27,7 @@ import {
   Legend,
 } from "recharts";
 import config from "../lib/config";
+import { Download } from "lucide-react"; // or whichever icon package you're using
 
 const apiUrl = config.apiUrl;
 
@@ -159,6 +160,32 @@ const Index = () => {
     );
   }
 
+  const handleDownload = async () => {
+  try {
+    const response = await fetch("/Monitoring1.5.zip");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch file");
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "Monitoring1.5.zip");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Download failed:", error);
+    alert("Download failed. Please try again.");
+  }
+};
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -166,20 +193,44 @@ const Index = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="space-y-6 p-6 select-none"
     >
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-right gap-4 mb-8">
         <h1 className="text-3xl text-gray-900 dark:text-white tracking-tight">
-          Dashboard <small>({formatDate(startDate)} – {formatDate(currentDate)})</small>
+          Dashboard{" "}
+          <small>
+            ({formatDate(startDate)} – {formatDate(currentDate)})
+          </small>
         </h1>
-        <motion.div whileHover={{ scale: 1.05 }} transition={{ duration: 0.2 }}>
-          <Button
-            size="sm"
-            onClick={() => navigate("/devices")}
-            className="shadow-sm hover:shadow-md transition-shadow duration-200 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600"
+        <div className="flex flex-col md:flex-row md:justify-right md:items-right gap-4 mb-8">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+            className="flex gap-2"
           >
-            <Database className="mr-2 h-4 w-4" />
-            View All Devices
-          </Button>
-        </motion.div>
+            <Button
+              size="sm"
+              onClick={() => navigate("/devices")}
+              className="px-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600"
+            >
+              <Database className="mr-2 h-4 w-4" />
+              View All Devices
+            </Button>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.2 }}
+            className="flex gap-2"
+          >
+            <Button
+              size="sm"
+              onClick={() => handleDownload()}
+              className="px-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:text-white dark:hover:bg-green-600"
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Download App
+            </Button>
+          </motion.div>
+        </div>
       </div>
 
       <motion.div
@@ -250,101 +301,101 @@ const Index = () => {
       </motion.div>
 
       <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.4 }}
-      className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-    >
-      {/* Latest Device Status Card */}
-      <DashboardCard
-        title="Latest Device Status"
-        description={
-          lastUpdatedDevice
-            ? `Computer: ${lastUpdatedDevice.computerName}`
-            : "No devices"
-        }
-        className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
       >
-        <div className="flex flex-wrap justify-around gap-6 mt-8">
-          {[
-            { value: lastUpdatedDevice?.cpu ?? 0, label: "CPU Usage" },
-            { value: lastUpdatedDevice?.ram ?? 0, label: "RAM Usage" },
-            { value: lastUpdatedDevice?.diskUsing ?? 0, label: "Disk Usage" },
-          ].map((gauge, index) => (
-            <motion.div
-              key={gauge.label}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.1 * index }}
-            >
-              <GaugeChart
-                value={gauge.value}
-                label={gauge.label}
-                className="hover:scale-105 transition-transform duration-300"
-              />
-            </motion.div>
-          ))}
-        </div>
-      </DashboardCard>
-
-      {/* OS Distribution Card */}
-      <DashboardCard
-        title="OS Distribution"
-        className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
-      >
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="h-[300px]"
+        {/* Latest Device Status Card */}
+        <DashboardCard
+          title="Latest Device Status"
+          description={
+            lastUpdatedDevice
+              ? `Computer: ${lastUpdatedDevice.computerName}`
+              : "No devices"
+          }
+          className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
         >
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={osDistribution}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={90}
-                paddingAngle={2}
-                dataKey="count"
-                nameKey="name"
+          <div className="flex flex-wrap justify-around gap-6 mt-8">
+            {[
+              { value: lastUpdatedDevice?.cpu ?? 0, label: "CPU Usage" },
+              { value: lastUpdatedDevice?.ram ?? 0, label: "RAM Usage" },
+              { value: lastUpdatedDevice?.diskUsing ?? 0, label: "Disk Usage" },
+            ].map((gauge, index) => (
+              <motion.div
+                key={gauge.label}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.1 * index }}
               >
-                {osDistribution.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={COLORS[index % COLORS.length]}
-                    className="hover:opacity-80 transition-opacity duration-200 cursor-pointer"
-                    tabIndex={-1} // <-- Important: disables focus outline on click/focus
-                  />
-                ))}
-              </Pie>
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value) => (
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {value}
-                  </span>
-                )}
-              />
-              <Tooltip
-                formatter={(value) => [`${value} devices`, "Count"]}
-                contentStyle={{
-                  backgroundColor: "rgba(255, 255, 255, 0.95)",
-                  border: "none",
-                  borderRadius: "8px",
-                  boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                  backdropFilter: "blur(8px)",
-                  color: "#1F2937",
-                }}
-                labelStyle={{ color: "#374151", fontWeight: "600" }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        </motion.div>
-      </DashboardCard>
-    </motion.div>
+                <GaugeChart
+                  value={gauge.value}
+                  label={gauge.label}
+                  className="hover:scale-105 transition-transform duration-300"
+                />
+              </motion.div>
+            ))}
+          </div>
+        </DashboardCard>
+
+        {/* OS Distribution Card */}
+        <DashboardCard
+          title="OS Distribution"
+          className="backdrop-blur-sm bg-white/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50 shadow-sm hover:shadow-md transition-shadow duration-300"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="h-[300px]"
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={osDistribution}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  dataKey="count"
+                  nameKey="name"
+                >
+                  {osDistribution.map((entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                      className="hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+                      tabIndex={-1} // <-- Important: disables focus outline on click/focus
+                    />
+                  ))}
+                </Pie>
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value) => (
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                      {value}
+                    </span>
+                  )}
+                />
+                <Tooltip
+                  formatter={(value) => [`${value} devices`, "Count"]}
+                  contentStyle={{
+                    backgroundColor: "rgba(255, 255, 255, 0.95)",
+                    border: "none",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    backdropFilter: "blur(8px)",
+                    color: "#1F2937",
+                  }}
+                  labelStyle={{ color: "#374151", fontWeight: "600" }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </motion.div>
+        </DashboardCard>
+      </motion.div>
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

@@ -1,29 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  HardDrive,
-  Search,
-  AlertTriangle,
-  CircleCheck,
-  CircleAlert,
-  CircleX,
-} from "lucide-react";
+import React, { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DevicesTable from "@/components/Dashboard/DevicesTable";
-import { MOCK_DEVICES } from "@/lib/mock-data";
-import { DateRange } from "react-day-picker";
-import {
-  isWithinInterval,
-  startOfWeek,
-  endOfWeek,
-  subDays,
-  endOfDay,
-} from "date-fns";
 import config from "../lib/config";
+import { subDays, endOfDay } from "date-fns";
+
 const apiUrl = config.apiUrl;
 
 const DevicesPage = () => {
@@ -33,29 +17,25 @@ const DevicesPage = () => {
   const [loggedUser, setLoggedUser] = useState("");
   const [deviceList, setDeviceList] = useState([]);
 
-  const [dateRange, setDateRange] = useState<DateRange>({
-    from: subDays(new Date(), 6), // 7-day range including today
+  const [dateRange, setDateRange] = useState({
+    from: subDays(new Date(), 6), // Last 7 days (including today)
     to: endOfDay(new Date()),
   });
 
+  // Fetch devices from API
   async function getDevicesData({
     deviceId,
     computerName,
     loggedUser,
     dateRange,
-  }: {
-    deviceId?: string;
-    computerName?: string;
-    loggedUser?: string;
-    dateRange: { from: Date | null; to: Date | null };
   }) {
     try {
       const params = new URLSearchParams({
         deviceId: deviceId || "",
         computerName: computerName || "",
         loggedUser: loggedUser || "",
-        dateFrom: dateRange.from?.toISOString() || "",
-        dateTo: dateRange.to?.toISOString() || "",
+        dateFrom: dateRange.from ? dateRange.from.toISOString() : "",
+        dateTo: dateRange.to ? dateRange.to.toISOString() : "",
       }).toString();
 
       const response = await fetch(
@@ -68,12 +48,14 @@ const DevicesPage = () => {
         throw new Error(`API error: ${response.statusText}`);
       }
       const data = await response.json();
-      return data.devices; // Expected to return device data array
+      return data.devices || [];
     } catch (error) {
-      return []; // Return empty array on failure
+      console.error("Failed to fetch devices:", error);
+      return [];
     }
   }
 
+  // Fetch on mount and whenever filters or date range change
   useEffect(() => {
     const fetchDevices = async () => {
       setLoading(true);
@@ -81,35 +63,29 @@ const DevicesPage = () => {
         deviceId,
         computerName,
         loggedUser,
-        dateRange: { from: dateRange.from, to: dateRange.to },
+        dateRange,
       });
-      setDeviceList(data); // Update state with fetched data
+      setDeviceList(data);
       setLoading(false);
     };
-
     fetchDevices();
-  }, [dateRange]);
+  }, [deviceId, computerName, loggedUser, dateRange]);
 
+  // Filter devices client-side by search inputs
   const filteredDevices = useMemo(() => {
     return deviceList.filter((device) => {
-      // Filter by search term
-      const searchMatch =
-        device.rowKey.toLowerCase().includes(deviceId.toLowerCase()) &&
-        device.computerName
-          .toLowerCase()
-          .includes(computerName.toLowerCase()) &&
-        device.loggedOnUser.toLowerCase().includes(loggedUser.toLowerCase());
-
-      return searchMatch;
+      const idMatch = device.rowKey
+        ?.toLowerCase()
+        .includes(deviceId.toLowerCase());
+      const nameMatch = device.computerName
+        ?.toLowerCase()
+        .includes(computerName.toLowerCase());
+      const userMatch = device.loggedOnUser
+        ?.toLowerCase()
+        .includes(loggedUser.toLowerCase());
+      return idMatch && nameMatch && userMatch;
     });
   }, [deviceList, deviceId, computerName, loggedUser]);
-
-  const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = `${date.getMonth() + 1}`.padStart(2, "0"); // Months are 0-based
-    const day = `${date.getDate()}`.padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
 
   return (
     <motion.div
@@ -118,34 +94,34 @@ const DevicesPage = () => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="space-y-6 p-6 select-none"
     >
+      {/* Header */}
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <HardDrive className="h-6 w-6" />
-            <h1 className="text-3xl text-gray-900 dark:text-white tracking-tight">
-              Devices :{" "}
-              <strong style={{ fontSize: "36px" }}>
-                {filteredDevices.length}
-              </strong>
-            </h1>
-          </div>
+          <h1 className="text-3xl text-gray-900 dark:text-white tracking-tight">
+            Devices :{" "}
+            <strong style={{ fontSize: "36px" }}>{filteredDevices.length}</strong>
+          </h1>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-left gap-4">
+
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-4">
+          {/* Date Range Picker */}
           <div className="relative w-full sm:w-64 md:w-80">
             <DateRangePicker date={dateRange} setDate={setDateRange} />
           </div>
-          <div
-            className="relative w-full sm:w-64 md:w-80"
-            style={{ display: "none" }}
-          >
+
+          {/* Device ID Search */}
+          <div className="relative w-full sm:w-64 md:w-80">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
             <Input
-              placeholder="Deviced ID"
+              placeholder="Device ID"
               value={deviceId}
               onChange={(e) => setDeviceId(e.target.value)}
               className="pl-9"
             />
           </div>
+
+          {/* Computer Name Search */}
           <div className="relative w-full sm:w-64 md:w-80">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
             <Input
@@ -155,6 +131,8 @@ const DevicesPage = () => {
               className="pl-9"
             />
           </div>
+
+          {/* Logged On User Search */}
           <div className="relative w-full sm:w-64 md:w-80">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
             <Input
@@ -166,18 +144,21 @@ const DevicesPage = () => {
           </div>
         </div>
 
+        {/* Loading Spinner */}
         {loading ? (
           <div className="w-full flex justify-center py-10">
             <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
           </div>
         ) : (
+          // DevicesTable component for data display
           <DevicesTable devices={filteredDevices} />
         )}
 
-        {filteredDevices.length === 0 && (
+        {/* No results message */}
+        {filteredDevices.length === 0 && !loading && (
           <div className="text-center py-10">
             <p className="text-gray-500 dark:text-gray-400">
-              No devices found matching
+              No devices found matching your criteria.
             </p>
             <Button
               variant="ghost"
@@ -186,7 +167,7 @@ const DevicesPage = () => {
                 setComputerName("");
                 setLoggedUser("");
                 setDateRange({
-                  from: subDays(new Date(), 6), // 7-day range including today
+                  from: subDays(new Date(), 6),
                   to: endOfDay(new Date()),
                 });
               }}
