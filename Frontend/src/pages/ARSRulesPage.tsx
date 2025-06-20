@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { format, formatDistanceToNow, parseISO } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   CheckCircle,
   AlertTriangle,
@@ -16,7 +16,6 @@ import {
   HardDrive,
   Eye,
   Upload,
-  Calendar,
   Clock,
 } from "lucide-react";
 import config from "../lib/config";
@@ -28,7 +27,7 @@ const ASRComplianceMatrix = () => {
   const [reloadData, setReloadData] = useState(false);
   const navigate = useNavigate();
 
-  async function getDeviceList() {
+  const getDeviceList = async () => {
     try {
       const params = new URLSearchParams({
         deviceId: "",
@@ -43,42 +42,30 @@ const ASRComplianceMatrix = () => {
         `http://${apiUrl}/api/devices_laststatus?${params}`,
         { method: "GET" }
       );
+
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
       }
+
       const data = await response.json();
       return data.devices || [];
     } catch (error) {
       console.error("Error fetching devices:", error);
       return [];
     }
-  }
+  };
 
   useEffect(() => {
     const fetchDevices = async () => {
       setLoading(true);
-      let data = await getDeviceList();
-      data = data.sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      const data = await getDeviceList();
+      const sorted = data.sort(
+        (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
       );
-      setDeviceList(data);
+      setDeviceList(sorted);
       setLoading(false);
     };
-    fetchDevices();
-  }, []);
 
-  useEffect(() => {
-    const fetchDevices = async () => {
-      setLoading(true);
-      let data = await getDeviceList();
-      data = data.sort(
-        (a, b) =>
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-      );
-      setDeviceList(data);
-      setLoading(false);
-    };
     fetchDevices();
   }, [reloadData]);
 
@@ -128,17 +115,20 @@ const ASRComplianceMatrix = () => {
     switch (status) {
       case "block":
       case "on":
+      case 1:
         return "text-green-400";
       case "audit":
+      case 2:
         return "text-yellow-400";
       case "off":
+      case 6:
         return "text-red-400";
       default:
         return "text-gray-400";
     }
   };
 
-  const columns = [
+    const columns = [
     {
       key: "name",
       label: "Device Name",
@@ -281,152 +271,182 @@ const ASRComplianceMatrix = () => {
   ];
 
   return (
-    <div className="bg-white dark:bg-gray-900 text-black dark:text-white p-6 rounded-lg h-full flex flex-col">
-      <div style={{ paddingBottom: "20px" }}>
-        <div className="flex items-between justify-between gap-2 truncate">
-          <div>
-            <h1 className="text-2xl font-semibold">
-              ASR Rules :{" "}
-              <strong style={{ fontSize: "32px" }}>{deviceList.length}</strong>
-            </h1>
-          </div>
-          <div style={{ paddingRight: "20px" }}>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ duration: 0.2 }}
-            >
-              <Button
-                size="sm"
-                onClick={() => {
-                  setReloadData(!reloadData);
-                }}
-                className="px-5 shadow-sm hover:shadow-md transition-shadow duration-200 bg-info-500 hover:bg-info-600 dark:bg-info-400 dark:text-white dark:hover:bg-info-500"
+    <div className="bg-white dark:bg-gray-900 text-black dark:text-white ">
+      {/* Matrix Summary Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+        {columns.slice(3, -1).flatMap((column) =>
+          [0, 1, 2, 6].map((val) => {
+            const count = deviceList.filter((d) => {
+              try {
+                console.log(typeof d.ASRRules === "string"
+                    ? JSON.parse(d.ASRRules)
+                    : d.ASRRules)
+                const rules =
+                  typeof d.ASRRules === "string"
+                    ? JSON.parse(d.ASRRules)
+                    : d.ASRRules;
+                if (val === 0){
+                  return rules[column.key] === val || rules[column.key] === undefined;
+                }
+                return rules[column.key] == val  ;
+              } catch (e) {
+                return 0;
+              }
+            }).length;
+
+            return (
+              <div
+                key={`status-${column.key}-${val}`}
+                className="cursor-pointer border rounded-lg p-3 shadow-sm hover:shadow-md "
               >
-                <Upload className="mr-2 h-4 w-4 rotate-180" />
-                ReloadData
-              </Button>
-            </motion.div>
-          </div>
-        </div>
+                <h2 className="text">
+                  {column.label} - {getStatusText(val)}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {count} device{count !== 1 && "s"}
+                </p>
+              </div>
+            );
+          })
+        )}
       </div>
+
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-semibold">
+          ASR Rules: <strong className="text-3xl">{deviceList.length}</strong>
+        </h1>
+          <Button
+            size="sm"
+            onClick={() => setReloadData(!reloadData)}
+            className="px-5 bg-info-500 hover:bg-info-600 dark:bg-info-400 dark:text-white dark:hover:bg-info-500"
+          >
+            <Upload className="mr-2 h-4 w-4 rotate-180" />
+            Reload Data
+          </Button>
+      </div>
+
       {loading ? (
         <div className="w-full flex justify-center py-10">
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-blue-500 border-t-transparent" />
         </div>
+      ) : deviceList.length === 0 ? (
+        <div className="text-center text-gray-500 py-10">
+          No devices found. Try reloading.
+        </div>
       ) : (
-        <div className="relative overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg">
-          <table className="w-full min-w-max text-sm table-fixed border-collapse">
-            <thead className="sticky top-0 z-40 bg-gray-100 dark:bg-gray-800">
-              <tr>
-                {columns.map((col, index) => (
-                  <th
-                    key={col.key}
-                    style={{
-                      width: index === 0 ? "200px" : "auto",
-                      height: "50px",
-                    }}
-                    className={`px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 min-w-32 align-middle
-                    ${
-                      index === 0
-                        ? "sticky left-0 z-50 bg-gray-100 dark:bg-gray-800"
-                        : ""
-                    }`}
-                  >
-                    <div
-                      className="flex items-center justify-center gap-2 truncate"
-                      title={col.label}
+        <div>
+          <div className="overflow-auto max-h-[70vh] border border-gray-300 dark:border-gray-700 rounded-lg">
+            <table className="w-full min-w-max text-sm table-fixed border-collapse">
+              <thead className="sticky top-0 z-40 bg-gray-100 dark:bg-gray-800">
+                <tr>
+                  {columns.map((col, index) => (
+                    <th
+                      key={col.key}
+                      className={`px-3 py-3 text-center font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider border-b border-gray-200 dark:border-gray-700 min-w-32 align-middle ${
+                        index === 0
+                          ? "sticky left-0 z-50 bg-gray-100 dark:bg-gray-800"
+                          : ""
+                      }`}
                     >
-                      <div className="text-gray-600 dark:text-gray-300">
-                        {col.icon}
+                      <div
+                        className="flex items-center justify-center gap-2 truncate"
+                        title={col.label}
+                      >
+                        <div className="text-gray-600 dark:text-gray-300">
+                          {col.icon}
+                        </div>
+                        <div className="text-xs font-medium truncate max-w-[200px]">
+                          {col.shortLabel || col.label}
+                        </div>
                       </div>
-                      <div className="text-xs font-medium whitespace-nowrap max-w-[200px] truncate">
-                        {col.shortLabel || col.label}
-                      </div>
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {deviceList.map((device) => {
+                  let rules = {};
+                  try {
+                    rules =
+                      typeof device.ASRRules === "string"
+                        ? JSON.parse(device.ASRRules)
+                        : device.ASRRules;
+                  } catch (e) {
+                    rules = {};
+                  }
 
-            <tbody>
-              {deviceList.map((device) => {
-                let rules = {};
-                try {
-                  rules = JSON.parse(device.ASRRules || "{}");
-                } catch (e) {
-                  console.warn("Invalid ASRRules JSON", e);
-                }
-
-                return (
-                  <tr
-                    key={device.deviceId}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors even:bg-white odd:bg-gray-100 dark:even:bg-gray-900 dark:odd:bg-gray-800"
-                  >
-                    {/* Sticky first column */}
-                    <td
-                      className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 align-middle whitespace-nowrap text-center"
-                      style={{ width: 150 }}
-                      title={device.computerName}
+                  return (
+                    <tr
+                      key={device.deviceId}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors even:bg-white odd:bg-gray-100 dark:even:bg-gray-900 dark:odd:bg-gray-800"
                     >
-                      {device.computerName}
-                    </td>
-                    
-                    <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <div className="text-sm">
-                          <div>{format(device.timestamp, "yyyy-MM-dd")}</div>
-                          <div className="text-muted-foreground">
-                            {formatDistanceToNow(device.timestamp, {
+                      <td
+                        className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 font-medium sticky left-0 z-30 bg-white dark:bg-gray-900 align-middle whitespace-nowrap text-center"
+                        style={{ width: 150 }}
+                        title={device.computerName}
+                      >
+                        {device.computerName}
+                      </td>
+
+                      <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
+                        <div className="flex flex-col items-center">
+                          <div>
+                            {format(new Date(device.timestamp), "yyyy-MM-dd")}
+                          </div>
+                          <div className="text-muted-foreground text-xs">
+                            {formatDistanceToNow(new Date(device.timestamp), {
                               addSuffix: true,
                             })}
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {getStatusIcon(device.networkProtection)}
-                        <span
-                          className={getStatusColor(device.networkProtection)}
-                        >
-                          {getStatusText(device.networkProtection)}
-                        </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Other columns */}
-                    {columns.slice(3, -1).map((col) => {
-                      const status = rules[col.key] || "unknown";
-                      return (
-                        <td
-                          key={col.key}
-                          className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
-                        >
-                          <div className="flex items-center justify-center gap-2">
-                            {getStatusIcon(status)}
-                            <span className={getStatusColor(status)}>
-                              {getStatusText(status)}
-                            </span>
-                          </div>
-                        </td>
-                      );
-                    })}
+                      <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          {getStatusIcon(device.networkProtection)}
+                          <span
+                            className={getStatusColor(device.networkProtection)}
+                          >
+                            {getStatusText(device.networkProtection)}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Action button column */}
-                    <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleViewDetails(device.deviceId)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {columns.slice(3, -1).map((col) => {
+                        const status =
+                          rules[col.key] !== undefined
+                            ? rules[col.key]
+                            : "unknown";
+                        return (
+                          <td
+                            key={col.key}
+                            className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center"
+                          >
+                            <div className="flex items-center justify-center gap-2">
+                              {getStatusIcon(status)}
+                              <span className={getStatusColor(status)}>
+                                {getStatusText(status)}
+                              </span>
+                            </div>
+                          </td>
+                        );
+                      })}
+
+                      <td className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 text-center">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewDetails(device.deviceId)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
