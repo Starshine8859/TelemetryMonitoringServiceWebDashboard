@@ -35,7 +35,7 @@ const App = () => (
                   <Route path="devices/:deviceId" element={<DeviceDetailsPage />} />
                   {/* <Route path="security" element={<TrendsPage />} /> */}
                   <Route path="security/networkProtection" element={<NetworkProtectionPage />} />
-                  <Route path="security/ARSRules" element={<ARSRulesPage />} />
+                  <Route path="security/arsrules" element={<ARSRulesPage />} />
                   <Route path="crashes" element={<CrashAnalysisPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                 </Route>

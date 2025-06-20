@@ -94,7 +94,7 @@ const AppSidebar = () => {
                     Network Protection
                   </NavLink>
                   <NavLink
-                    to="/security/ARSRules"
+                    to="/security/arsrules"
                     className={({ isActive }) =>
                       `block px-2 py-1 text-sm rounded-md ${
                         isActive
